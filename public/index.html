@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Movie Application</title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f2f2f2;
+        }
+
+        header {
+            background: #222;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            margin: 30px auto;
+        }
+
+        .form-box {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #ccc;
+        }
+
+        input,
+        select {
+            padding: 12px;
+            margin: 6px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 11px 18px;
+            margin: 6px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #333;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.8;
+        }
+
+        .search-box {
+            margin-top: 25px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .movie-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .movie-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px #ccc;
+        }
+
+        .movie-card h3 {
+            margin-top: 0;
+        }
+
+        .delete {
+            background: #b00020;
+        }
+
+        .edit {
+            background: #444;
+        }
+
+        #message {
+            margin: 15px;
+            font-weight: bold;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+    <h1>🎬 Movie Application</h1>
+
+    <p>Manage Your Favorite Movies</p>
+
+</header>
+
+
+<div class="container">
+
+
+    <!-- ADD MOVIE -->
+
+    <div class="form-box">
+
+        <h2>Add Movie</h2>
+
+        <input id="title" placeholder="Movie Title">
+
+        <input id="actor" placeholder="Actor">
+
+        <input id="actress" placeholder="Actress">
+
+        <input id="year" type="number" placeholder="Year">
+
+        <input id="genre" placeholder="Genre">
+
+        <input id="rating" type="number" step="0.1" placeholder="Rating">
+
+        <br>
+
+        <button onclick="addMovie()">
+            Add Movie
+        </button>
+
+        <div id="message"></div>
+
+    </div>
+
+
+    <!-- SEARCH -->
+
+    <div class="search-box">
+
+        <h2>🔍 Search Movies</h2>
+
+        <input
+            id="search"
+            placeholder="Enter movie title..."
+            onkeyup="searchMovie()"
+        >
+
+        <select id="genreFilter" onchange="filterGenre()">
+
+            <option value="">All Genres</option>
+
+        </select>
+
+        <button onclick="displayMovies()">
+            Show All
+        </button>
+
+    </div>
+
+
+    <!-- MOVIE LIST -->
+
+    <h2>Movie List</h2>
+
+    <div id="movies" class="movie-container"></div>
+
+
+</div>
+
+
+<script>
+
+
+// ADD MOVIE
+
+async function addMovie() {
+
+    const title =
+        document.getElementById("title").value.trim();
+
+    const actor =
+        document.getElementById("actor").value.trim();
+
+    const actress =
+        document.getElementById("actress").value.trim();
+
+    const year =
+        document.getElementById("year").value;
+
+    const genre =
+        document.getElementById("genre").value.trim();
+
+    const rating =
+        document.getElementById("rating").value;
+
+
+    if (
+        !title ||
+        !actor ||
+        !actress ||
+        !year ||
+        !genre ||
+        !rating
+    ) {
+
+        alert("Please fill all fields.");
+
+        return;
+
+    }
+
+
+    const movie = {
+
+        title: title,
+
+        actor: actor,
+
+        actress: actress,
+
+        year: Number(year),
+
+        genre: genre,
+
+        rating: Number(rating)
+
+    };
+
+
+    const response = await fetch("/movies", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify(movie)
+
+    });
+
+
+    if (response.ok) {
+
+        alert("Movie added successfully!");
+
+        clearInputs();
+
+        displayMovies();
+
+    }
+
+}
+
+
+// DISPLAY MOVIES
+
+async function displayMovies() {
+
+    const response =
+        await fetch("/movies");
+
+    const movies =
+        await response.json();
+
+
+    showMovies(movies);
+
+    loadGenres(movies);
+
+}
+
+
+// SHOW MOVIES
+
+function showMovies(movies) {
+
+    let output = "";
+
+
+    if (movies.length === 0) {
+
+        output = "<p>No movies found.</p>";
+
+    }
+
+
+    movies.forEach(movie => {
+
+        output += `
+
+            <div class="movie-card">
+
+                <h3>🎬 ${movie.title}</h3>
+
+                <p>
+                    <strong>Actor:</strong>
+                    ${movie.actor}
+                </p>
+
+                <p>
+                    <strong>Actress:</strong>
+                    ${movie.actress}
+                </p>
+
+                <p>
+                    <strong>Year:</strong>
+                    ${movie.year}
+                </p>
+
+                <p>
+                    <strong>Genre:</strong>
+                    ${movie.genre}
+                </p>
+
+                <p>
+                    <strong>⭐ Rating:</strong>
+                    ${movie.rating}
+                </p>
+
+
+                <button
+                    class="edit"
+                    onclick="editMovie('${movie._id}')"
+                >
+                    Edit
+                </button>
+
+
+                <button
+                    class="delete"
+                    onclick="deleteMovie('${movie._id}')"
+                >
+                    Delete
+                </button>
+
+            </div>
+
+        `;
+
+    });
+
+
+    document.getElementById("movies").innerHTML = output;
+
+}
+
+
+// EDIT MOVIE
+
+async function editMovie(id) {
+
+    const response =
+        await fetch("/movies/" + id);
+
+    const movie =
+        await response.json();
+
+
+    const title =
+        prompt("Movie Title:", movie.title);
+
+    if (title === null) return;
+
+
+    const actor =
+        prompt("Actor:", movie.actor);
+
+    if (actor === null) return;
+
+
+    const actress =
+        prompt("Actress:", movie.actress);
+
+    if (actress === null) return;
+
+
+    const year =
+        prompt("Year:", movie.year);
+
+    if (year === null) return;
+
+
+    const genre =
+        prompt("Genre:", movie.genre);
+
+    if (genre === null) return;
+
+
+    const rating =
+        prompt("Rating:", movie.rating);
+
+    if (rating === null) return;
+
+
+    const updatedMovie = {
+
+        title: title,
+
+        actor: actor,
+
+        actress: actress,
+
+        year: Number(year),
+
+        genre: genre,
+
+        rating: Number(rating)
+
+    };
+
+
+    await fetch("/movies/" + id, {
+
+        method: "PUT",
+
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify(updatedMovie)
+
+    });
+
+
+    alert("Movie updated successfully!");
+
+    displayMovies();
+
+}
+
+
+// DELETE MOVIE
+
+async function deleteMovie(id) {
+
+    const confirmDelete =
+        confirm("Are you sure you want to delete this movie?");
+
+
+    if (!confirmDelete) return;
+
+
+    await fetch("/movies/" + id, {
+
+        method: "DELETE"
+
+    });
+
+
+    alert("Movie deleted!");
+
+    displayMovies();
+
+}
+
+
+// SEARCH MOVIES
+
+async function searchMovie() {
+
+    const search =
+        document.getElementById("search").value.toLowerCase();
+
+
+    const response =
+        await fetch("/movies");
+
+    const movies =
+        await response.json();
+
+
+    const filtered =
+        movies.filter(movie =>
+            movie.title.toLowerCase().includes(search)
+        );
+
+
+    showMovies(filtered);
+
+}
+
+
+// FILTER BY GENRE
+
+async function filterGenre() {
+
+    const selectedGenre =
+        document.getElementById("genreFilter").value;
+
+
+    const response =
+        await fetch("/movies");
+
+    const movies =
+        await response.json();
+
+
+    if (!selectedGenre) {
+
+        showMovies(movies);
+
+        return;
+
+    }
+
+
+    const filtered =
+        movies.filter(movie =>
+            movie.genre === selectedGenre
+        );
+
+
+    showMovies(filtered);
+
+}
+
+
+// LOAD GENRES
+
+function loadGenres(movies) {
+
+    const select =
+        document.getElementById("genreFilter");
+
+
+    const currentValue =
+        select.value;
+
+
+    const genres =
+        [...new Set(
+            movies.map(movie => movie.genre)
+        )];
+
+
+    select.innerHTML =
+        '<option value="">All Genres</option>';
+
+
+    genres.forEach(genre => {
+
+        select.innerHTML += `
+            <option value="${genre}">
+                ${genre}
+            </option>
+        `;
+
+    });
+
+
+    select.value = currentValue;
+
+}
+
+
+// CLEAR INPUTS
+
+function clearInputs() {
+
+    document.getElementById("title").value = "";
+
+    document.getElementById("actor").value = "";
+
+    document.getElementById("actress").value = "";
+
+    document.getElementById("year").value = "";
+
+    document.getElementById("genre").value = "";
+
+    document.getElementById("rating").value = "";
+
+}
+
+
+// LOAD MOVIES WHEN PAGE OPENS
+
+displayMovies();
+
+
+</script>
+
+
+</body>
+
+</html>
